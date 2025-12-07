@@ -10,23 +10,18 @@ It supports:
 - `transcribe` or `translate`
 - segment-level output
 
-## Why this approach?
-
-RunPod Serverless is a good fit for bursty workloads:
-you only pay for GPU during execution and can scale with a queue-based endpoint.
-
-`faster-whisper` offers strong performance/latency characteristics for inference.
-
 ---
 
 ## Repo structure
 
 ```
 .
-├── rp_handler.py
+├── handler.py
 ├── requirements.txt
 ├── Dockerfile
 ├── test_request.json
+├── .runpod
+│   └── tests.json
 ├── scripts
 │   ├── encode_audio_base64.py
 │   └── local_smoke_test.py
@@ -112,25 +107,13 @@ Environment variables you can set:
 
 ---
 
-## Local smoke test (CPU-only fallback)
+## Tests
 
-This worker is intended for CUDA GPUs.
-For a quick local logic check (not performance), you can run:
+The `.runpod/tests.json` file provides a basic test definition you can run in RunPod's
+validation flow.
 
-```bash
-python3 scripts/local_smoke_test.py --audio-url "https://example.com/audio.mp3"
-```
-
-This script will attempt to load the model using `faster-whisper`.
-If you don't have CUDA locally, it may fall back or fail depending on your setup.
-
----
-
-## Notes
-
-- The first request may take longer due to model download (cold start).
-- For best latency, ensure your audio URLs are directly downloadable without auth.
-- Consider smaller models if your workloads are very short and cost-sensitive.
+The sample test uses `audio_url`. Replace it with a stable, publicly accessible short audio file
+(or switch to `audio_base64`) for deterministic CI-style checks.
 
 ---
 

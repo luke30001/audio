@@ -4,7 +4,7 @@ Local smoke test for the transcription logic.
 
 This is NOT a full RunPod simulation, but helps you validate:
 - model load call
-- input parsing shape
+- input parsing
 - output assembly
 
 Usage:
@@ -12,12 +12,11 @@ Usage:
 
 Notes:
 - Needs ffmpeg available.
-- If you don't have CUDA, faster-whisper may fail depending on your environment.
+- If you don't have CUDA, faster-whisper may fail depending on your setup.
 """
 import argparse
 import json
 import os
-import sys
 import tempfile
 from faster_whisper import WhisperModel
 

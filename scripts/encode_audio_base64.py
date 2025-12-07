@@ -5,7 +5,7 @@ Utility to base64-encode a local audio file for RunPod input.
 Usage:
   python3 encode_audio_base64.py path/to/audio.mp3
 
-It prints a JSON snippet you can paste into your request.
+It prints a JSON payload you can paste into your request.
 """
 import base64
 import json
