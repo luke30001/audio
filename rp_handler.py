@@ -4,22 +4,19 @@ import tempfile
 import runpod
 from faster_whisper import WhisperModel
 
-# Carica il modello una sola volta all'avvio del worker
-# Usa "openai/whisper-large-v3-turbo" da Hugging Face. :contentReference[oaicite:5]{index=5}
+# Allows override via RunPod endpoint env vars
 MODEL_NAME = os.getenv("MODEL_NAME", "openai/whisper-large-v3-turbo")
-
-# Scegli compute_type per bilanciare velocità/memoria
-# float16 di solito è ok su GPU moderne
 COMPUTE_TYPE = os.getenv("COMPUTE_TYPE", "float16")
 
+# Load once at container start
+# On RunPod this should run on a CUDA-capable GPU
 model = WhisperModel(
     MODEL_NAME,
     device="cuda",
-    compute_type=COMPUTE_TYPE
+    compute_type=COMPUTE_TYPE,
 )
 
 def _download_to_file(url: str, suffix: str = ".audio"):
-    # download semplice senza dipendenze extra
     import urllib.request
     fd, path = tempfile.mkstemp(suffix=suffix)
     os.close(fd)
@@ -28,14 +25,14 @@ def _download_to_file(url: str, suffix: str = ".audio"):
 
 def handler(event):
     """
-    Input atteso:
+    Expected input:
     {
       "input": {
         "audio_url": "https://...",
-        // oppure
+        // or
         "audio_base64": "<...>",
         "language": "it",
-        "task": "transcribe",   // o "translate"
+        "task": "transcribe",   // or "translate"
         "beam_size": 5,
         "vad_filter": true
       }
@@ -43,7 +40,7 @@ def handler(event):
     """
     inp = event.get("input", {}) or {}
 
-    language = inp.get("language")  # es. "it"
+    language = inp.get("language")  # e.g. "it"
     task = inp.get("task", "transcribe")
     beam_size = int(inp.get("beam_size", 5))
     vad_filter = bool(inp.get("vad_filter", True))
@@ -51,9 +48,9 @@ def handler(event):
     audio_path = None
 
     try:
-        if "audio_url" in inp and inp["audio_url"]:
+        if inp.get("audio_url"):
             audio_path = _download_to_file(inp["audio_url"])
-        elif "audio_base64" in inp and inp["audio_base64"]:
+        elif inp.get("audio_base64"):
             data = base64.b64decode(inp["audio_base64"])
             fd, audio_path = tempfile.mkstemp(suffix=".wav")
             os.close(fd)
@@ -67,16 +64,16 @@ def handler(event):
             language=language,
             task=task,
             beam_size=beam_size,
-            vad_filter=vad_filter
+            vad_filter=vad_filter,
         )
 
         seg_list = []
         text_parts = []
         for s in segments:
             seg_list.append({
-                "start": s.start,
-                "end": s.end,
-                "text": s.text
+                "start": float(s.start),
+                "end": float(s.end),
+                "text": s.text,
             })
             text_parts.append(s.text)
 
@@ -85,14 +82,14 @@ def handler(event):
             "language": getattr(info, "language", language),
             "duration": getattr(info, "duration", None),
             "segments": seg_list,
-            "model": MODEL_NAME
+            "model": MODEL_NAME,
         }
 
     finally:
         if audio_path and os.path.exists(audio_path):
             try:
                 os.remove(audio_path)
-            except:
+            except Exception:
                 pass
 
 runpod.serverless.start({"handler": handler})

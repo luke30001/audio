@@ -1,0 +1,9 @@
+{
+  "input": {
+    "audio_url": "https://example.com/audio.mp3",
+    "language": "it",
+    "task": "transcribe",
+    "beam_size": 5,
+    "vad_filter": true
+  }
+}
