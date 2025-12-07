@@ -1,0 +1,3 @@
+runpod
+faster-whisper
+ffmpeg-python
